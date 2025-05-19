@@ -2063,7 +2063,9 @@
 
         document.getElementById('movieModal').style.display = 'none';
         seatSelection.style.display = 'block';
-
+seatSelection.scrollIntoView({ behavior: 'smooth' });
+        document.body.style.overflow = 'auto';
+        
         // Auto-scroll to seat selection
         setTimeout(() => {
           seatSelection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2332,6 +2334,193 @@
     // ================
     // HELPER FUNCTIONS
     // ================
+function formatDuration(duration) {
+      const hours = Math.floor(duration / 60);
+      const minutes = duration % 60;
+      return `${hours}h ${minutes}m`;
+    }
+    function formatCurrency(amount) {
+      return `$${amount.toFixed(2)}`;
+    }
+    function closeCheckout() {
+      document.getElementById('checkoutModal').style.display = 'none';
+      document.body.style.overflow = 'auto';
+    }
+    function closeConfirmation() {
+      document.getElementById('confirmationModal').style.display = 'none';
+      document.body.style.overflow = 'auto';
+      selectedSeats = [];
+      currentBooking = null;
+      loadMovies('now_showing', 'nowShowingMovies');
+    }
+    function showModal(modalId) {
+      document.getElementById(modalId).style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+    function hideModal(modalId) {
+      document.getElementById(modalId).style.display = 'none';
+      document.body.style.overflow = 'auto';
+    }
+    function switchModal(modalId) {
+      document.querySelectorAll('.modal').forEach(modal => {
+        modal.style.display = 'none';
+      });
+      document.getElementById(modalId).style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+    function showMovieModal() {
+      document.getElementById('movieModal').style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+    function hideMovieModal() {
+      document.getElementById('movieModal').style.display = 'none';
+      document.body.style.overflow = 'auto';
+    }
+    function showSeatSelectionModal() {
+      document.getElementById('seatSelection').style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+    function hideSeatSelectionModal() {
+      document.getElementById('seatSelection').style.display = 'none';
+      document.body.style.overflow = 'auto';
+    }
+    function showCheckoutModal() {
+      document.getElementById('checkoutModal').style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+    function hideCheckoutModal() {
+      document.getElementById('checkoutModal').style.display = 'none';
+      document.body.style.overflow = 'auto';
+    }
+    function showConfirmationModal() {
+      document.getElementById('confirmationModal').style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+    function hideConfirmationModal() {
+      document.getElementById('confirmationModal').style.display = 'none';
+      document.body.style.overflow = 'auto';
+    }
+
+    function showBookingModal() {
+      document.getElementById('bookingModal').style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+    function hideBookingModal() {
+      document.getElementById('bookingModal').style.display = 'none';
+      document.body.style.overflow = 'auto';
+    }
+    function showUserProfile() {
+      document.querySelector('.user-menu').classList.toggle('active');
+    }
+    function hideUserProfile() {
+      document.querySelector('.user-menu').classList.remove('active');
+    }
+    function showMovieDetails(movieId) {
+      const movie = allMovies.find(m => m.id === movieId);
+      if (movie) {
+        document.getElementById('movieDetailsTitle').textContent = movie.title;
+        document.getElementById('movieDetailsDescription').textContent = movie.description;
+        document.getElementById('movieDetailsGenres').textContent = movie.genres.join(', ');
+        document.getElementById('movieDetailsRating').textContent = `${movie.rating}★`;
+        document.getElementById('movieDetailsDuration').textContent = formatDuration(movie.duration);
+        document.getElementById('movieDetailsModal').style.display = 'block';
+      }
+    }
+    function hideMovieDetails() {
+      document.getElementById('movieDetailsModal').style.display = 'none';
+      document.body.style.overflow = 'auto';
+    }
+    function showMovieTrailer(trailerUrl) {
+      const trailerModal = document.getElementById('trailerModal');
+      trailerModal.querySelector('iframe').src = trailerUrl;
+      trailerModal.style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+    function hideMovieTrailer() {
+      const trailerModal = document.getElementById('trailerModal');
+      trailerModal.querySelector('iframe').src = '';
+      trailerModal.style.display = 'none';
+      document.body.style.overflow = 'auto';
+    }
+    function showMovieReviews(movieId) {
+      const reviewsModal = document.getElementById('reviewsModal');
+      reviewsModal.style.display = 'block';
+      document.body.style.overflow = 'hidden';
+
+      // Load reviews from Firestore
+      loadMovieReviews(movieId);
+    }
+    async function loadMovieReviews(movieId) {
+      const reviewsContainer = document.getElementById('movieReviews');
+      reviewsContainer.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i> Loading reviews...</div>';
+
+      try {
+        const snapshot = await db.collection('reviews').where('movieId', '==', movieId).get();
+
+        if (snapshot.empty) {
+          reviewsContainer.innerHTML = '<div class="no-reviews">No reviews available</div>';
+          return;
+        }
+
+        reviewsContainer.innerHTML = '';
+        snapshot.forEach(doc => {
+          const review = doc.data();
+          const reviewElement = document.createElement('div');
+          reviewElement.className = 'review-card';
+          reviewElement.innerHTML = `
+            <h4>${review.userName}</h4>
+            <p>${review.comment}</p>
+            <span>${review.rating}★</span>
+          `;
+          reviewsContainer.appendChild(reviewElement);
+        });
+      } catch (error) {
+        console.error("Error loading reviews:", error);
+        reviewsContainer.innerHTML = '<div class="error">Failed to load reviews</div>';
+      }
+    }
+    function hideMovieReviews() {
+      document.getElementById('reviewsModal').style.display = 'none';
+      document.body.style.overflow = 'auto';
+    }
+    function showMovieBooking(movieId) {
+      const bookingModal = document.getElementById('bookingModal');
+      bookingModal.style.display = 'block';
+      document.body.style.overflow = 'hidden';
+
+      // Load booking details from Firestore
+      loadMovieBooking(movieId);
+    }
+    async function loadMovieBooking(movieId) {
+      const bookingContainer = document.getElementById('movieBooking');
+      bookingContainer.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i> Loading bookings...</div>';
+
+      try {
+        const snapshot = await db.collection('bookings').where('movieId', '==', movieId).get();
+
+        if (snapshot.empty) {
+          bookingContainer.innerHTML = '<div class="no-bookings">No bookings available</div>';
+          return;
+        }
+
+        bookingContainer.innerHTML = '';
+        snapshot.forEach(doc => {
+          const booking = doc.data();
+          const bookingElement = document.createElement('div');
+          bookingElement.className = 'booking-card';
+          bookingElement.innerHTML = `
+            <h4>${booking.userName}</h4>
+            <p>${booking.seats.join(', ')}</p>
+            <span>${formatCurrency(booking.total)}</span>
+          `;
+          bookingContainer.appendChild(bookingElement);
+        });
+      } catch (error) {
+        console.error("Error loading bookings:", error);
+        bookingContainer.innerHTML = '<div class="error">Failed to load bookings</div>';
+      }
+    }
+    
     function closeModal() {
       document.querySelectorAll('.modal').forEach(modal => {
         modal.style.display = 'none';
