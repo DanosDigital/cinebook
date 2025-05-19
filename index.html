@@ -1804,63 +1804,56 @@
     // MOVIE MANAGEMENT
     // =================
     async function loadMovies(status, elementId) {
-      const movieGrid = document.getElementById(elementId);
-      movieGrid.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i> Loading movies...</div>';
+  const movieGrid = document.getElementById(elementId);
+  movieGrid.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i> Loading movies...</div>';
 
-      try {
-        let query = moviesRef.where('status', '==', status);
+  try {
+    let query = moviesRef.where('status', '==', status);
 
-        // Apply genre filter if selected and it's for now showing movies
-        if (status === 'now_showing') {
-          const genreFilter = document.getElementById('genreFilter').value;
-          if (genreFilter) {
-            query = query.where('genres', 'array-contains', genreFilter);
-          }
-        }
-
-        const snapshot = await query.get();
-        allMovies = []; // Reset allMovies array
-
-        if (snapshot.empty) {
-          movieGrid.innerHTML = '<div class="no-movies">No movies found</div>';
-          return;
-        }
-
-        movieGrid.innerHTML = '';
-
-        snapshot.forEach(doc => {
-          const movie = { id: doc.id, ...doc.data() };
-          allMovies.push(movie); // Add to allMovies array for search functionality
-
-          const movieElement = document.createElement('div');
-          movieElement.className = 'movie-card';
-          movieElement.onclick = () => openMovieModal(movie.id);
-
-          movieElement.innerHTML = `
-            <img src="${movie.posterUrl}" alt="${movie.title}" class="movie-poster">
-            <div class="movie-info">
-              <h3 class="movie-title">${movie.title}</h3>
-              <div class="movie-meta">
-                <span>${movie.genres.join(', ')}</span>
-                <span class="movie-rating">${movie.rating}★</span>
-              </div>
-            </div>
-          `;
-
-          // Disable click and show different message for coming soon movies
-          if (status === 'coming_soon') {
-            movieElement.onclick = () => {
-              showToast('This movie is coming soon. Check back later for showtimes!', 'info');
-            };
-          }
-
-          movieGrid.appendChild(movieElement);
-        });
-      } catch (error) {
-        movieGrid.innerHTML = '<div class="error">Failed to load movies. Please try again.</div>';
-        console.error("Error loading movies:", error);
+    // Apply genre filter if selected and it's for now showing movies
+    if (status === 'now_showing') {
+      const genreFilter = document.getElementById('genreFilter').value;
+      if (genreFilter) {
+        query = query.where('genres', 'array-contains', genreFilter);
       }
     }
+
+    const snapshot = await query.get();
+    allMovies = []; // Reset allMovies array
+
+    if (snapshot.empty) {
+      movieGrid.innerHTML = '<div class="no-movies">No movies found</div>';
+      return;
+    }
+
+    movieGrid.innerHTML = '';
+
+    snapshot.forEach(doc => {
+      const movie = { id: doc.id, ...doc.data() };
+      allMovies.push(movie); // Add to allMovies array for search functionality
+
+      const movieElement = document.createElement('div');
+      movieElement.className = 'movie-card';
+      movieElement.onclick = () => openMovieModal(movie.id);
+
+      movieElement.innerHTML = `
+        <img src="${movie.posterUrl}" alt="${movie.title}" class="movie-poster">
+        <div class="movie-info">
+          <h3 class="movie-title">${movie.title}</h3>
+          <div class="movie-meta">
+            <span>${movie.genres.join(', ')}</span>
+            <span class="movie-rating">${movie.rating}★</span>
+          </div>
+        </div>
+      `;
+
+      movieGrid.appendChild(movieElement);
+    });
+  } catch (error) {
+    movieGrid.innerHTML = '<div class="error">Failed to load movies. Please try again.</div>';
+    console.error("Error loading movies:", error);
+  }
+}
 
     // Search movies function
     function searchMovies() {
@@ -1900,39 +1893,43 @@
     }
 
     async function openMovieModal(movieId) {
-      try {
-        const movieDoc = await moviesRef.doc(movieId).get();
-        if (!movieDoc.exists) throw new Error("Movie not found");
+  try {
+    const movieDoc = await moviesRef.doc(movieId).get();
+    if (!movieDoc.exists) throw new Error("Movie not found");
 
-        selectedMovie = { id: movieDoc.id, ...movieDoc.data() };
-        const modal = document.getElementById('movieModal');
+    selectedMovie = { id: movieDoc.id, ...movieDoc.data() };
+    const modal = document.getElementById('movieModal');
 
-        // Update modal content with movie data
-        modal.querySelector('.modal-header h2').textContent = selectedMovie.title;
-        modal.querySelector('.movie-trailer').innerHTML = `
-          <iframe width="100%" height="100%" src="${selectedMovie.trailerUrl}" 
-          frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-          allowfullscreen></iframe>
-        `;
-        modal.querySelector('.movie-description p').textContent = selectedMovie.description;
-        modal.querySelector('.movie-cast p').textContent = selectedMovie.cast.join(', ');
-        modal.querySelector('.movie-director p').textContent = selectedMovie.director;
-        modal.querySelector('.movie-rating-info p').innerHTML = `
-          <span class="rating-badge">${selectedMovie.rating}★</span>
-          <span>${selectedMovie.certification} | ${formatDuration(selectedMovie.duration)} | ${selectedMovie.genres.join(', ')}</span>
-        `;
+    // Update modal content with movie data
+    modal.querySelector('.modal-header h2').textContent = selectedMovie.title;
+    modal.querySelector('.movie-trailer').innerHTML = `
+      <iframe width="100%" height="100%" src="${selectedMovie.trailerUrl}" 
+      frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+      allowfullscreen></iframe>
+    `;
+    modal.querySelector('.movie-description p').textContent = selectedMovie.description;
+    modal.querySelector('.movie-cast p').textContent = selectedMovie.cast.join(', ');
+    modal.querySelector('.movie-director p').textContent = selectedMovie.director;
+    modal.querySelector('.movie-rating-info p').innerHTML = `
+      <span class="rating-badge">${selectedMovie.rating}★</span>
+      <span>${selectedMovie.certification} | ${formatDuration(selectedMovie.duration)} | ${selectedMovie.genres.join(', ')}</span>
+    `;
 
-        // Load showtimes only for now showing movies
-        if (selectedMovie.status === 'now_showing') {
-          loadShowtimes(movieId);
-        }
-
-        modal.style.display = 'block';
-        document.body.style.overflow = 'hidden';
-      } catch (error) {
-        showToast("Failed to load movie details: " + error.message, 'error');
-      }
+    // Hide showtime selector for coming soon movies
+    const showtimeSelector = modal.querySelector('.showtime-selector');
+    if (selectedMovie.status === 'coming_soon') {
+      showtimeSelector.style.display = 'none';
+    } else {
+      showtimeSelector.style.display = 'block';
+      loadShowtimes(movieId);
     }
+
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+  } catch (error) {
+    showToast("Failed to load movie details: " + error.message, 'error');
+  }
+}
 
     function formatDuration(minutes) {
       const hours = Math.floor(minutes / 60);
