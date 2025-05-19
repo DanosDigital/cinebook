@@ -2519,11 +2519,23 @@ function formatDuration(duration) {
     }
     
     function closeModal() {
-      document.querySelectorAll('.modal').forEach(modal => {
-        modal.style.display = 'none';
-      });
-      document.body.style.overflow = 'auto';
+  const modal = document.getElementById('movieModal');
+  if (modal) {
+    // Stop any playing trailers
+    const iframe = modal.querySelector('iframe');
+    if (iframe) {
+      iframe.src = ''; // This stops the video
     }
+    modal.style.display = 'none';
+  }
+  
+  // Close other modals if needed
+  document.querySelectorAll('.modal:not(#movieModal)').forEach(m => {
+    m.style.display = 'none';
+  });
+  
+  document.body.style.overflow = 'auto';
+}
 
     function scrollToMovies() {
       document.getElementById('now-showing').scrollIntoView({ behavior: 'smooth' });
